@@ -32,6 +32,7 @@ resource "aws_instance" "first_instance" {
   ami           = "ami-0303e2e4a29f041a3"
   instance_type = var.aws_instance_type
   key_name      = "14_07_key"
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
   tags = {
     Name = "My Webserver"
   }
