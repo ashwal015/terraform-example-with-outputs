@@ -159,6 +159,7 @@ terraform destroy
 
 ## 📝 Notes & Lessons Learned
 
+- **Outputs were built to work together with variables**, not just hardcoded values: `instance_count` (a variable) controls how many instances get created, and since `aws_instance.first_instance` uses `count`, the outputs (`public_ips`, `private_ips`) are written as **lists** (`aws_instance.first_instance[*].public_ip`) so they scale automatically with however many instances the variable creates — 1, 3, or any number — without needing to rewrite the output block.
 - The SSH private key is written using `printf '%s\n'` (not `echo`) to reliably preserve multi-line key formatting inside the workflow.
 - The EC2 instance **must** reference the Terraform-managed security group (`vpc_security_group_ids`) — otherwise it falls back to the account's `default` security group, which blocks SSH/HTTP entirely.
 - AWS Free Tier covers 750 hours/month of `t2.micro` usage combined across all running instances — keep `instance_count = 1` to stay safely within the free tier.
