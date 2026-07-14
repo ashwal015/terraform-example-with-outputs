@@ -8,13 +8,13 @@ jobs:
         if: github.event_name == 'push'
         steps:
             - name: Checkout
-              uses: actions/checkout@v7
+              uses: actions/checkout@v4
 
             - name: Setup Terraform
-              uses: hashicorp/setup-terraform@v4
+              uses: hashicorp/setup-terraform@v3
 
             - name: Configure AWS Credentials
-              uses: aws-actions/configure-aws-credentials@v6
+              uses: aws-actions/configure-aws-credentials@v4
               with:
                 aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -30,8 +30,8 @@ jobs:
               run: |
                 sleep 10
                 mkdir -p ~/.ssh
-                echo "${{secrets.SSH_PRIVATE_KEY}}" > ~/.ssh/mein_schlüssel
-                chmod 600 ~/.ssh/mein_schlüssel
+                printf '%s\n' "${{secrets.SSH_PRIVATE_KEY}}" > ~/.ssh/deploy_key
+                chmod 600 ~/.ssh/deploy_key
                 for ip in $(terraform output -json public_ips | jq -r ".[]"); do
                 ssh-keyscan -H $ip >> ~/.ssh/known_hosts
                 done
@@ -39,14 +39,14 @@ jobs:
             - name: install nginx on ec2
               run: |
                   for ip in $(terraform output -json public_ips | jq -r ".[]"); do
-                  ssh -i ~/.ssh/mein_schlüssel ubuntu@$ip "sudo apt update && sudo apt install nginx -y"
+                  ssh -i ~/.ssh/deploy_key ubuntu@$ip "sudo apt update && sudo apt install nginx -y"
                   done
 
             - name: deploy website
               run: |
                 for ip in $(terraform output -json public_ips | jq -r ".[]"); do
-                scp -i ~/.ssh/mein_schlüssel index.html ubuntu@$ip:/home/ubuntu/index.html
-                ssh -i ~/.ssh/mein_schlüssel ubuntu@$ip "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
+                scp -i ~/.ssh/deploy_key index.html ubuntu@$ip:/home/ubuntu/index.html
+                ssh -i ~/.ssh/deploy_key ubuntu@$ip "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
                 done
     
     
@@ -71,4 +71,4 @@ jobs:
               run: terraform init
             
             - name: Terraform Destroy
-              run: terraform destroy --auto-approve
+              run: terraform destroy -auto-approve
